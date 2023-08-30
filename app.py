@@ -2,7 +2,7 @@ import streamlit as st
 import replicate as rp
 import os
 
-st.set_page_config("🦙 Llama 2 chat app")
+st.set_page_config("Llama 2 chat app", page_icon="🦙")
 
 st.markdown("<h1 style='text-align: center'>CHATPULSE</h1>", unsafe_allow_html=True)
 with st.sidebar:
@@ -79,6 +79,3 @@ if st.session_state.messages[-1]["role"] != "assistant":
             
     message = {"role": "assistant", "content": full_response}
     st.session_state.messages.append(message)
-
-
-    
