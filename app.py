@@ -52,13 +52,13 @@ def generate_llama_2_messages(prompt, api_for_selected_model):
     
     for dict_item in st.session_state.messages:
         if dict_item['role'] == 'user':
-            string_dialogue += 'User: ' + dict_item['content'] + "\n\n"
+            string_dialogue += 'User: ' + dict_item['content'] + "\\n\\n"
         else:
-            string_dialogue += "assistant" + dict_item['content'] + "\n\n"
+            string_dialogue += "assistant" + dict_item['content'] + "\\n\\n"
     
     output = rp.run(api_for_selected_model, 
-                    input = {'prompt': f"{string_dialogue} {prompt} + Assistant: ", "temperature": 0.2, 'max_length': 2000})
-    
+                     input = {"prompt": f"{string_dialogue} {prompt} Assistant: ", "temperature":0.1, "top_p":0.9, "max_length": 3000, 
+                             "repetition_penalty":1})
     return output
 
 if prompt := st.chat_input(disabled= not replicate_api):
