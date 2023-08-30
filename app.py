@@ -2,64 +2,83 @@ import streamlit as st
 import replicate as rp
 import os
 
-st.set_page_config(page_title="Llama 2")
+st.set_page_config("🦙 Llama 2 chat app")
 
+st.markdown("<h1 style='text-align: center'>CHATPULSE</h1>", unsafe_allow_html=True)
 with st.sidebar:
-    st.title("Llama 2")
-    if 'REPLICATE_API_TOKEN' in st.secrets:
-        st.success("API key already provided!", icon='✔️')
-    else:
-        replicate_api = st.text_input("Enter Replicate API token/key", type="password")
-        if not (replicate_api.startswith('r8_') and len(replicate_api) == 40):
-            st.warning('Please enter your correct credentials!', icon='⚠️')
+    st.title("🦙 Llama 2 Control Panel")
+    with st.form("llama_2_control_panel_form"):
+        st.write("Select a model, enter API token, then press 'Submit'.")
+        model_selected = st.selectbox("Select a Llama Model", ["llama-2-70b-chat", "llama-2-13b-chat", "llama-2-7b-chat"])
+        if 'REPLICATE_API_TOKEN' in st.secrets:
+            st.success("API Token is already present '✔️'")
         else:
-            st.success('Your API token/key is successfully set for chat!')
+            replicate_api = st.text_input("Enter you replicate API key/token", type="password")
+            st.markdown("<h4><a href='https://gist.github.com/MonishSoundarRaj/76d1d6ef9a806d879ef4357ae5111f00'>How to get replicate API key?</a></h4>", unsafe_allow_html=True)
+                
+        submit_change = st.form_submit_button("Submit")
+        
+        if submit_change:
+            if not (replicate_api.startswith('r8_') and len(replicate_api) == 40):
+                st.warning("Please enter the right credentials! '⚠️'")
+            else:
+                st.success("Your API token/key has been accepted successfully, and your model has been set")
 
 os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
+if model_selected == "llama-2-70b-chat":
+   api = "replicate/llama-2-70b-chat:2796ee9483c3fd7aa2e171d38f4ca12251a30609463dcfd4cd76703f22e96cdf"
+elif model_selected == "llama-2-13b-chat":
+    api = "a16z-infra/llama-2-13b-chat:9dff94b1bed5af738655d4a7cbcdcde2bd503aa85c94334fe1f42af7f3dd5ee3"
+else:
+    api = "a16z-infra/llama-2-7b-chat:d24902e3fa9b698cc208b5e63136c4e26e828659a9f09827ca6ec5bb83014381"
+
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+    st.session_state.messages = [{"role": "assistant", "content": "How can I help you today?"}]
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
+st.markdown(f"<h5>Model Selected: {model_selected}</h5>", unsafe_allow_html = True)
 
-def clear_chat_history():
-    st.session_state.messages = [{"role": "assistant", "content": "How may I assist you today?"}]
+for item in st.session_state.messages:
+    with st.chat_message(item['role']):
+        st.write(item['content'])
 
-st.sidebar.button('Clear Chat', on_click=clear_chat_history)
+def clear_chat():
+     messages = [{"role": "assistant", "content": "How can I help you today?"}]
 
-def generate_llama2_response(prompt_input):
+st.sidebar.button("Clear Chat", on_click=clear_chat)
+
+def generate_llama_2_messages(prompt, api_for_selected_model):
     string_dialogue = "You are a helpful assistant. You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'."
     
-    for dict_message in st.session_state.messages:
-        if dict_message["role"] == "user":
-            string_dialogue += "User: " + dict_message["content"] + "\\n\\n"
+    for dict_item in st.session_state.messages:
+        if dict_item['role'] == 'user':
+            string_dialogue += 'User: ' + dict_item['content'] + "\n\n"
         else:
-            string_dialogue += "Assistant: " + dict_message["content"] + "\\n\\n" 
+            string_dialogue += "assistant" + dict_item['content'] + "\n\n"
     
-    output = rp.run('a16z-infra/llama13b-v2-chat:df7690f1994d94e96ad9d568eac121aecf50684a0b0963b25a41cc40061269e5',
-                    input = {"prompt": f"{string_dialogue} {prompt_input} Assistant: ", "temperature":0.1, "top_p":0.9, "max_length": 2000, 
-                             "repetition_penalty":1})
+    output = rp.run(api_for_selected_model, 
+                    input = {'prompt': f"{string_dialogue} {prompt} + Assistant: ", "temperature": 0.2, 'max_length': 2000})
     
     return output
 
-if prompt := st.chat_input(disabled=not replicate_api):
+if prompt := st.chat_input(disabled= not replicate_api):
     st.session_state.messages.append({"role": "User", "content": prompt})
     with st.chat_message("user"):
-        st.write(prompt)
+       st.write(prompt)
 
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking"):
-            response = generate_llama2_response(prompt)
+            response = generate_llama_2_messages(prompt, api)
             placeholder = st.empty()
             full_response = ''
             for item in response:
                 full_response += item
-
+                
             placeholder.markdown(full_response)
+            
     message = {"role": "assistant", "content": full_response}
-    
     st.session_state.messages.append(message)
+
+
     
